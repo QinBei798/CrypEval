@@ -30,3 +30,7 @@ Thumbs.db
 
 # Python type stubs
 *.pyi
+
+# Project documents (local only)
+REPORT_DRAFT.md
+PPT_OUTLINE.md
