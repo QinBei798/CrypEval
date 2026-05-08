@@ -1,159 +1,222 @@
-# CrypEval: Provable Security Parameter Estimator
+# 🔐 CrypEval — 可证明安全参数评测系统
 
-An interactive full-stack tool for analysing cryptographic hardness assumptions,
-parameter trade-offs, and hardware brute-force resistance.  CrypEval provides
-single-point security estimates and sweep-curve visualisations across
-post-quantum (lattice), classical public-key, and symmetric/hash primitives.
+<p align="center">
+  <b>基于 Agentic Workflow 的多原语密码安全交互式分析工具</b><br>
+  <sub>FastAPI · Streamlit · OpenAI 兼容接口 · 纯 Python 数学引擎</sub>
+</p>
 
----
-
-## Core Features
-
-### Post-Quantum / Lattice Cryptography
-- **LWE (Learning With Errors)** — Core-SVP classical hardness via root Hermite
-  factor δ → BKZ block-size β → security bits λ.  Based on the GapSVP → BDD →
-  uSVP reduction chain.
-- **CKKS / RLWE (Homomorphic Encryption)** — Ring-LWE security for the CKKS
-  scheme.  Estimates λ from the ring dimension *N* and coefficient modulus *Q*,
-  using the canonical embedding and the same δ → β → λ pipeline.
-
-### Classical Public-Key Cryptography
-- **RSA (Integer Factorisation)** — General Number Field Sieve (GNFS) complexity
-  *L<sub>N</sub>(1/3, (64/9)<sup>1/3</sup>)*, calibrated against NIST /
-  ECRYPT-II recommendations for key sizes from 1 024 to 15 360 bits.
-- **ECC (Elliptic Curve / SECP256K1)** — Classical security via Pollard's rho
-  (*λ* ≈ curve-bits / 2), with an explicit warning about Shor's algorithm
-  reducing quantum security to 0 bits.
-
-### Symmetric & Hash Brute-force
-- **Multi-Adversary Hardware Simulator** — Five threat profiles spanning
-  consumer CPUs to nation-state ASIC farms.
-- **Five Hash Algorithms** — MD5, SHA-256, NTLM, WPA2 PBKDF2, and Argon2.
-  Argon2 correctly models memory-hardness: GPU/ASIC rates are heavily
-  bottlenecked by VRAM bandwidth.
-- **Time-to-Crack Table** — Per-hardware estimates with emoji indicators
-  (🔴 &lt; 1 day, 🟡 &lt; 1 year, 🟢 &gt; 1 year).
-
-### Dynamic Trade-off Visualisation
-- Interactive `st.line_chart` curves for LWE (*n* vs. *λ*) and CKKS
-  (*log₂ Q* vs. *λ*), allowing users to explore how parameter choices affect
-  security.
+<p align="center">
+  <img src="https://img.shields.io/badge/backend-FastAPI-009688?logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/frontend-Streamlit-FF4B4B?logo=streamlit" alt="Streamlit">
+  <img src="https://img.shields.io/badge/AI-工具调用代理-8A2BE2?logo=openai" alt="AI Agent">
+  <img src="https://img.shields.io/badge/license-教育/研究-purple" alt="License">
+</p>
 
 ---
 
-## Reproducible Build Instructions
+## 📖 项目概述
 
-These steps assume a Linux or WSL environment with Python 3.10+.
+**CrypEval** 是一个交互式全栈密码安全参数评测工具，覆盖三大密码范式：
 
-### 1. Clone & enter the project
+- 🧊 **后量子 / 格密码** — LWE、CKKS/RLWE（基于 BKZ 格归约的 Core-SVP 经典分析）
+- 🔑 **经典公钥密码** — RSA（GNFS 数域筛法）、ECC（Pollard's rho + Shor 量子警告）
+- 🔓 **对称密码 / 哈希暴力破解** — 5 种哈希算法 × 5 级攻击者硬件配置的穷举时间估算
+
+CrypEval 提供**单点安全评估**和**参数扫描曲线可视化**，并内置 **🤖 智能助手模式**：一个基于 LLM 函数调用（Tool Calling）的对话代理，可直接调用后端 API 进行密码学计算，以自然语言回答用户问题。
+
+---
+
+## ✨ 核心功能
+
+### 🧊 后量子 / 格密码
+
+| 原语 | 困难假设 | 评估方法 | 核心公式 |
+|------|---------|---------|---------|
+| **LWE** (容错学习) | GapSVP → BDD → uSVP | 根厄米特因子 δ → BKZ 块大小 β → 安全比特 λ | *λ* ≈ 0.292·β |
+| **CKKS / RLWE** (同态加密) | Ring-LWE → Ideal-SVP | 典范嵌入 + δ → β → λ 流水线 | *δ* = (Q/σ)<sup>1/N</sup> |
+
+### 🔑 经典公钥密码
+
+| 原语 | 攻击方法 | 安全模型 | 特点 |
+|------|---------|---------|------|
+| **RSA** (整数分解) | GNFS 数域筛法 | *L<sub>N</sub>(1/3, 1.923)* | 经 NIST/ECRYPT-II 校准，支持 1024–15360 bit |
+| **ECC** (椭圆曲线) | Pollard's rho + Shor | 经典 *λ* = k/2 | ⚠️ 量子计算机上安全级别降为 0 bit |
+
+### 🔓 对称密码暴力破解
+
+- 🖥️ **5 级威胁模型** — 从消费级 CPU 到国家级 ASIC 集群
+- 🔢 **5 种哈希算法** — MD5、SHA-256、NTLM、WPA2 PBKDF2、Argon2
+- 🧠 **Argon2 内存硬化建模** — GPU/ASIC 速率受 VRAM 带宽瓶颈压制（约 10⁷× 慢于 MD5）
+- 📊 **破解时间对比表** — 含 emoji 指示符（🔴 < 1 天 / 🟡 < 1 年 / 🟢 > 1 年）
+
+### 📈 动态权衡可视化
+
+- LWE：**晶格维度 n** vs. **安全级别 λ** 曲线
+- CKKS：**系数模数 log₂ Q** vs. **安全级别 λ** 曲线
+- 交互式 `st.line_chart`，参数变化即时反映
+
+### 🤖 智能助手模式（LLM 工具调用代理）
+
+- 基于 OpenAI 兼容接口的函数调用（Function Calling）
+- 自动将用户自然语言问题转换为后端 API 调用
+- 以专业中文密码学分析回复用户
+- 支持任意兼容接口（SiliconFlow、DeepSeek、OpenAI 等）
+
+---
+
+## 📊 密码学困难假设速览
+
+| 原语 | 困难假设 | 最佳已知攻击 | 经典安全 λ |
+|------|---------|-------------|-----------|
+| LWE | GapSVP → BDD → uSVP | BKZ 格归约 | 0.292 · β |
+| CKKS / RLWE | Ring-LWE → Ideal-SVP | 典范嵌入 BKZ | 0.292 · β |
+| RSA | 整数分解 | GNFS 数域筛法 | *L<sub>N</sub>(1/3, 1.923)* |
+| ECC | ECDLP | Pollard's rho | *k*/2 |
+| 暴力破解 | 密钥空间穷举 | 穷举搜索 | *log₂(S)* |
+| Argon2 | 内存硬化 KDF | 内存带宽限制搜索 | *log₂(S / rate)* |
+
+---
+
+## 🏗️ 项目架构
+
+```
+CrypEval/
+├── backend/                       # FastAPI 后端（密码计算引擎）
+│   ├── main.py                    # API 入口，路由分发 (7 个端点)
+│   ├── lwe_estimator.py           # LWE: δ → β → λ (Core-SVP)
+│   ├── ckks_estimator.py          # CKKS / RLWE 安全估算
+│   ├── rsa_estimator.py           # RSA GNFS 复杂度估算
+│   ├── ecc_estimator.py           # ECC Pollard's rho + Shor 警告
+│   └── bruteforce_estimator.py    # 多对手硬件暴力破解模拟
+├── frontend/
+│   └── app.py                     # Streamlit UI (控制面板 + 智能助手)
+├── requirements.txt               # 依赖声明
+├── REPORT_DRAFT.md                # 学术报告（中文）
+├── PPT_OUTLINE.md                 # 演示文稿大纲（中文）
+└── README.md
+```
+
+### 设计原则
+
+- **后端（FastAPI）** — 薄层数学引擎。每个估算器是独立的纯 Python 模块，实现标准密码学硬度公式，不依赖外部密码库（如 SEAL），保持依赖精简且代码可审计。
+- **前端（Streamlit）** — 交互式 UI，提供动态滑块、指标卡片、颜色编码安全评级、折线图和可展开困难假设说明。前端**不执行任何密码计算**，所有估算通过 REST API 委托给后端。
+- **智能助手** — 基于 OpenAI 兼容接口，将 `evaluate_cryptography` 工具定义注入 LLM，实现自然语言驱动的密码参数分析。
+
+---
+
+## 🚀 快速开始
+
+> 环境要求：Linux 或 WSL，Python 3.10+
+
+### 1️⃣ 克隆仓库
 
 ```bash
 git clone https://github.com/QinBei798/CrypEval.git
 cd CrypEval
 ```
 
-### 2. Create and activate a virtual environment
+### 2️⃣ 创建并激活虚拟环境
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3️⃣ 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Start the FastAPI backend (terminal 1)
+### 4️⃣ 启动 FastAPI 后端（终端 1）
 
 ```bash
 cd backend
 uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-The interactive API docs are now available at http://127.0.0.1:8000/docs.
+> 交互式 API 文档自动生成于 http://127.0.0.1:8000/docs
 
-### 5. Start the Streamlit frontend (terminal 2)
+### 5️⃣ 启动 Streamlit 前端（终端 2）
 
 ```bash
 cd frontend
 streamlit run app.py
 ```
 
-The UI opens at http://localhost:8501.
+> 前端界面自动打开于 http://localhost:8501
+
+### 6️⃣（可选）使用智能助手
+
+1. 切换到 **🤖 智能助手模式** 标签页
+2. 在侧边栏展开 **⚙️ 助手模型设置**
+3. 填入 API Base URL、API 密钥和模型名称
+4. 即可用自然语言咨询密码参数安全性
 
 ---
 
-## API Reference
+## 📡 API 参考
 
-All endpoints are `GET` and accept query parameters.  Responses are JSON.
+所有端点均为 `GET` 方法，接受查询参数，返回 JSON。
 
-| Endpoint | Parameters | Description |
-|---|---|---|
-| `/evaluate/lwe` | `n`, `q`, `sigma` | LWE single-point estimate |
-| `/evaluate/lwe/curve` | `q`, `sigma` | Sweep *n* (256–1 024) → list of {x, y} |
-| `/evaluate/ckks` | `N`, `Q`, `sigma` (default 3.2) | CKKS / RLWE single-point estimate |
-| `/evaluate/ckks/curve` | `N`, `sigma` | Sweep *log₂ Q* (10–800) → list of {x, y} |
-| `/evaluate/rsa` | `modulus_bits` | RSA GNFS estimate |
-| `/evaluate/ecc` | `curve_bits` | ECC classical + quantum estimate |
-| `/evaluate/bruteforce` | `algo`, `length`, `charset_size` | Multi-adversary brute-force table |
+| 端点 | 参数 | 说明 |
+|------|------|------|
+| `/evaluate/lwe` | `n`, `q`, `sigma` | LWE 单点安全评估 |
+| `/evaluate/lwe/curve` | `q`, `sigma` | 扫描 *n* (256–1024) → [{x, y}] 曲线数据 |
+| `/evaluate/ckks` | `N`, `Q`, `sigma` (默认 3.2) | CKKS / RLWE 单点安全评估 |
+| `/evaluate/ckks/curve` | `N`, `sigma` | 扫描 *log₂ Q* (10–800) → [{x, y}] 曲线数据 |
+| `/evaluate/rsa` | `modulus_bits` | RSA GNFS 安全估算 |
+| `/evaluate/ecc` | `curve_bits` | ECC 经典 + 量子安全评估 |
+| `/evaluate/bruteforce` | `algo`, `length`, `charset_size` | 多对手暴力破解时间表 |
+
+### 示例请求
+
+```bash
+# LWE 估算
+curl "http://127.0.0.1:8000/evaluate/lwe?n=1024&q=4294967296&sigma=3.2"
+
+# RSA 估算
+curl "http://127.0.0.1:8000/evaluate/rsa?modulus_bits=2048"
+
+# 暴力破解估算
+curl "http://127.0.0.1:8000/evaluate/bruteforce?algo=Argon2%20(Memory-Hard%2C%20Modern%20Standard)&length=8&charset_size=62"
+```
 
 ---
 
-## Architecture & AI Workflow
+## 🤖 Agentic Workflow 开发流程
+
+本项目完全采用 **Agentic Workflow（Claude Code）** 开发，共 10 个阶段：
 
 ```
-CrypEval/
-├── backend/
-│   ├── main.py                  # FastAPI entry point & routing
-│   ├── lwe_estimator.py         # LWE: δ → β → λ (Core-SVP)
-│   ├── ckks_estimator.py        # CKKS / RLWE security
-│   ├── rsa_estimator.py         # RSA GNFS complexity
-│   ├── ecc_estimator.py         # ECC Pollard's rho + Shor warning
-│   └── bruteforce_estimator.py  # Hardware brute-force simulator
-├── frontend/
-│   └── app.py                   # Streamlit UI (sidebar + metrics + charts)
-├── requirements.txt
-└── README.md
+脚手架 → LWE 核心引擎 → Streamlit UI → 多原语扩展 → ECC
+→ 参数权衡可视化 → 暴力破解模拟 → 学术报告/PPT → 工具调用代理 → 全中文化
 ```
 
-- **Backend** — FastAPI serving as a thin math-engine layer.  Each estimator is a
-  pure-Python module that implements standard cryptographic hardness formulas
-  without external crypto libraries.  This keeps the dependency footprint small
-  and the code auditable.
-- **Frontend** — Streamlit providing an interactive UI with dynamic sliders,
-  metric cards, colour-coded security callouts, line charts, and expandable
-  hardness-assumption explainers.  The frontend never performs cryptographic
-  calculations; it delegates all estimation to the backend via REST calls.
+与传统云端 AI 编程平台相比，Agentic Workflow 的核心优势在于：
 
-### Agentic Workflow
+| 维度 | Claude Code (本地 Agentic) | 云端 AI 编程平台 |
+|------|---------------------------|-------------------|
+| 文件操作 | 本地精确编辑，支持字符串级替换 | 上传/下载受限，大项目操作粒度粗 |
+| 命令执行 | 原生 Bash，直接运行 Python/Git | 云端沙箱受限 |
+| 迭代速度 | 即时反馈（修改→验证→测试同对话完成） | 受网络延迟影响 |
+| 领域深度 | 可深度调试密码数学（如 BKZ 求根修正） | 易产生幻觉 |
+| 数据安全 | 代码不离开本地 | 上传至第三方服务器 |
 
-This project was built using an **Agentic Workflow** (Claude Code) — an iterative,
-plan-execute-verify development loop driven by natural-language instruction.
-This stands in contrast to traditional cloud-deployed coding agents by keeping
-execution local, version-controlled, and fully auditable.  Each phase
-(scaffolding, LWE math, multi-primitive expansion, visualisation, brute-force
-simulation) was entered into the conversation as a specification block and
-implemented with human-in-the-loop review at every step.
+### 关键 Bug 修复案例
+
+1. **BKZ 公式求根发散** — 牛顿法在 δ 大时振荡；切换为从函数最小值右侧二分搜索，并补全遗漏的 `ln(πβ)/β` 项
+2. **WSL2 Git 推送失败** — SSH 端口 22 被防火墙阻止；通过 PAT 认证 HTTPS URL 解决
+3. **venv 隔离环境** — WSL2 默认无 pip；通过 `apt install python3-pip` + `python3 -m venv` 构建
 
 ---
 
-## Cryptographic Hardness Summary
+## 📄 许可说明
 
-| Primitive | Hardness Assumption | Best Known Attack | Classical λ |
-|---|---|---|---|
-| LWE | GapSVP → BDD → uSVP | BKZ lattice reduction | 0.292 · β |
-| CKKS / RLWE | Ring-LWE → Ideal-SVP | BKZ on canonical embedding | 0.292 · β |
-| RSA | Integer Factorisation | GNFS | *L<sub>N</sub>(1/3, 1.923)* |
-| ECC | ECDLP | Pollard's rho | *k*/2 |
-| Brute-force | Key-space exhaustion | Exhaustive search | *log₂(S)* |
-| Argon2 | Memory-hard KDF | Memory-bandwidth-bound search | *log₂(S / rate)* |
+本项目仅供教育和研究用途。在实际部署密码参数之前，请务必参考当前最新的密码学标准（NIST、ECRYPT、BSI、国密）。
 
 ---
 
-## License
-
-This project is provided for educational and research purposes.  Always consult
-current cryptographic standards (NIST, ECRYPT, BSI) before deploying real-world
-cryptographic parameters.
+<p align="center">
+  <sub>Built with ❤️ using Claude Code Agentic Workflow · 2026</sub>
+</p>
